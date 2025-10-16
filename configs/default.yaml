@@ -1,8 +1,8 @@
 data:
   sample_rate: 16000
   segment_seconds: 2.0
-  train_manifest: data/librispeech_100h/train.json
-  val_manifest: data/librispeech_100h/val.json
+  train_manifest: data/LibriSpeech/trainclean100.json
+  val_manifest: data/LibriSpeech/testclean.json
 
 model:
   # encoder: two levels (short @10 ms, long @80 ms), 64 dims each
@@ -59,3 +59,4 @@ loss:
 
 inference:
   buffer_ms: 20   # target algorithmic delay ~20ms (causal + no padding in deconv)
+
