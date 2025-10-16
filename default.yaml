@@ -1,0 +1,61 @@
+data:
+  sample_rate: 16000
+  segment_seconds: 2.0
+  train_manifest: data/librispeech_100h/train.json
+  val_manifest: data/librispeech_100h/val.json
+
+model:
+  # encoder: two levels (short @10 ms, long @80 ms), 64 dims each
+  enc:
+    conv_hidden: 512
+    short:
+      gru_hidden: 64
+      conv_kernel: [10, 8, 4, 4, 4]
+      downsample:  [5, 4, 2, 2, 2]
+      hop_ms: 10
+      delta_step: 0.05
+    long:
+      gru_hidden: 64
+      conv_kernel: [4, 4, 4]
+      downsample:  [2, 2, 2]
+      hop_ms: 80
+      delta_step: 0.08
+  dec:
+    # top level (long) upsample then fuse short, both with MRFF residual stacks
+    top:
+      deconv_kernel: [4, 4, 4]
+      upsample:      [2, 2, 2]
+      mrff_k: [3, 7, 11]
+      mrff_repeat: 3
+      start_channels: 256
+    low:
+      deconv_kernel: [10, 8, 8, 4]
+      upsample:      [5, 4, 4, 2]
+      mrff_k: [3, 7, 11]
+      mrff_repeat: 3
+      start_channels: 128
+
+train:
+  batch_size: 8
+  lr: 2.5e-4
+  grad_clip: 5.0
+  total_steps: 950000
+  log_every: 200
+  ckpt_every: 5000
+  mel:
+    n_fft: 1024
+    hop_length: 256
+    win_length: 1024
+    n_mels: 80
+
+loss:
+  # LSGAN + CC repr + Mel + Feature Matching (λ = [1,10,10,50,2] for [adv, CCs, CCl, mel, FM])
+  lambda:
+    adv: 1.0
+    cc_short: 10.0
+    cc_long: 10.0
+    mel: 50.0
+    fm: 2.0
+
+inference:
+  buffer_ms: 20   # target algorithmic delay ~20ms (causal + no padding in deconv)
